@@ -7,7 +7,7 @@ import string
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import add_to_date, now_datetime
+from frappe.utils import add_to_date, get_datetime, now_datetime
 
 from otp_generation.otp_generation.utils.sender import send_otp
 
@@ -18,14 +18,35 @@ class OTP(Document):
 			self.set_expiry()
 		self.check_expiry()
 
+	def after_insert(self):
+		self.expire_all_otps()
+
 	def set_expiry(self):
 		settings = frappe.get_single("OTP Settings")
 		expiry_minutes = settings.expiry_time_minutes or 10
 		self.expiry = add_to_date(now_datetime(), minutes=expiry_minutes)
 
 	def check_expiry(self):
-		if self.expiry and now_datetime() > self.expiry:
+		expiry_datetime = get_datetime(self.expiry)
+		if expiry_datetime and get_datetime(now_datetime()) > expiry_datetime:
 			self.status = "Expired"
+
+	def expire_all_otps(self):
+		filters = {
+			"status": "Valid",
+			"name": ["!=", self.name],
+		}
+		if self.email:
+			filters["email"] = self.email
+		if self.phone:
+			filters["phone"] = self.phone
+
+		otps = frappe.get_all("OTP", filters=filters)
+
+		for otp in otps:
+			otp_doc = frappe.get_doc("OTP", otp.name)
+			otp_doc.status = "Expired"
+			otp_doc.save(ignore_permissions=True)
 
 
 def generate(email=None, phone=None, purpose=None, user=None, send=True):
@@ -96,25 +117,24 @@ def generate(email=None, phone=None, purpose=None, user=None, send=True):
 
 
 def verify(otp_code, email=None, phone=None, purpose=None):
-	otp = None
-
-	if email:
-		otp = frappe.db.get_value(
+	if email and frappe.db.exists(
+		"OTP", {"otp_code": otp_code, "email": email, "status": "Valid", "purpose": purpose}
+	):
+		otp_doc = frappe.get_doc(
 			"OTP",
 			{"otp_code": otp_code, "email": email, "status": "Valid", "purpose": purpose},
-			["name", "expiry"],
 		)
-	elif phone:
-		otp = frappe.db.get_value(
+	elif phone and frappe.db.exists(
+		"OTP", {"otp_code": otp_code, "phone": phone, "status": "Valid", "purpose": purpose}
+	):
+		otp_doc = frappe.get_doc(
 			"OTP",
 			{"otp_code": otp_code, "phone": phone, "status": "Valid", "purpose": purpose},
-			["name", "expiry"],
 		)
 
-	if not otp:
+	if not otp_doc:
 		frappe.throw(_("Invalid OTP"))
 
-	otp_doc = frappe.get_doc("OTP", otp.name)
 	otp_doc.check_expiry()
 
 	if otp_doc.status == "Expired":

@@ -29,8 +29,13 @@ def send_otp(email=None, phone=None, purpose=None, user=None):
 		)
 		frappe.local.response["http_status_code"] = 200
 		frappe.local.response["message"] = _("OTP generated successfully")
-
 		return frappe.local.response
+
+	except frappe.ValidationError as e:
+		frappe.local.response["http_status_code"] = 400
+		frappe.local.response["message"] = str(e)
+		return frappe.local.response
+
 	except Exception as e:
 		frappe.log_error(message=f"OTP Generation Error: {frappe.get_traceback()}", title="OTP Generation")
 		frappe.local.response["http_status_code"] = 500
@@ -68,8 +73,13 @@ def validate_otp(otp_code, email=None, phone=None, purpose=None):
 
 		frappe.local.response["http_status_code"] = 200
 		frappe.local.response["message"] = _("OTP verified successfully")
-
 		return frappe.local.response
+
+	except frappe.ValidationError as e:
+		frappe.local.response["http_status_code"] = 400
+		frappe.local.response["message"] = str(e)
+		return frappe.local.response
+
 	except Exception as e:
 		frappe.log_error(
 			message=f"OTP Verification Error: {frappe.get_traceback()}", title="OTP Verification"

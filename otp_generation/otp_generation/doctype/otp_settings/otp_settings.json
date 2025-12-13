@@ -6,6 +6,8 @@
  "engine": "InnoDB",
  "field_order": [
   "expiry_time_minutes",
+  "column_break_eqdq",
+  "max_otp_attempts",
   "section_break_1",
   "otp_length",
   "column_break_1",
@@ -100,11 +102,23 @@
    "fieldtype": "Data",
    "label": "SMS Sender Function",
    "mandatory_depends_on": "eval:doc.otp_delivery_type==='SMS' || doc.otp_delivery_type==='Both'"
+  },
+  {
+   "fieldname": "column_break_eqdq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "5",
+   "description": "Maximum number of OTP Attempts for a user[email/phone] per hour",
+   "fieldname": "max_otp_attempts",
+   "fieldtype": "Int",
+   "label": "Max OTP Attempts",
+   "reqd": 1
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2025-12-13 00:14:20.271553",
+ "modified": "2025-12-13 14:53:27.338695",
  "modified_by": "Administrator",
  "module": "OTP Generation",
  "name": "OTP Settings",

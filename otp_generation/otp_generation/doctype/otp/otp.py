@@ -68,6 +68,10 @@ def generate(email=None, phone=None, purpose=None, user=None, send=True):
 		characters = string.ascii_lowercase + string.digits
 		otp_code = "".join(secrets.choice(characters) for _ in range(otp_length))
 
+	user_otps = get_user_otps(user=user, phone=phone, email=email)
+	if len(user_otps) >= settings.max_otp_attempts:
+		frappe.throw(_("You have reached the maximum number of OTP attempts. Please try again after 1 hour."))
+
 	otp_doc = frappe.get_doc(
 		{
 			"doctype": "OTP",
@@ -144,3 +148,14 @@ def verify(otp_code, email=None, phone=None, purpose=None):
 	otp_doc.save(ignore_permissions=True)
 
 	return {"valid": True}
+
+
+def get_user_otps(user=None, phone=None, email=None):
+	filters = {"creation": [">=", add_to_date(now_datetime(), hours=-1)]}
+	if user:
+		filters["user"] = user
+	if phone:
+		filters["phone"] = phone
+	if email:
+		filters["email"] = email
+	return frappe.get_all("OTP", filters=filters)

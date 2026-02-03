@@ -121,6 +121,8 @@ def generate(email=None, phone=None, purpose=None, user=None, send=True):
 
 
 def verify(otp_code, email=None, phone=None, purpose=None):
+	otp_doc = None
+
 	if email and frappe.db.exists(
 		"OTP", {"otp_code": otp_code, "email": email, "status": "Valid", "purpose": purpose}
 	):

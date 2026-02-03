@@ -44,8 +44,6 @@ def send_otp(email=None, phone=None, purpose=None, user=None):
 		return frappe.local.response
 
 
-# API: POST /api/method/otp_generation.api.validate_otp
-@frappe.whitelist(allow_guest=True, methods=["POST"])
 def validate_otp(otp_code, email=None, phone=None, purpose=None):
 	"""
 	Verify OTP API endpoint
@@ -78,7 +76,7 @@ def validate_otp(otp_code, email=None, phone=None, purpose=None):
 	except frappe.ValidationError as e:
 		frappe.local.response["http_status_code"] = 400
 		frappe.local.response["message"] = str(e)
-		return frappe.local.response
+		raise e
 
 	except Exception as e:
 		frappe.log_error(
@@ -87,4 +85,4 @@ def validate_otp(otp_code, email=None, phone=None, purpose=None):
 		frappe.local.response["http_status_code"] = 500
 		frappe.local.response["message"] = _("OTP verification failed")
 		frappe.local.response["error"] = e
-		return frappe.local.response
+		raise e

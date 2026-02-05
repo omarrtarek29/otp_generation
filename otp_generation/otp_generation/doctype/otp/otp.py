@@ -52,6 +52,9 @@ class OTP(Document):
 def generate(email=None, phone=None, purpose=None, user=None, send=True):
 	settings = frappe.get_single("OTP Settings")
 	delivery_method = settings.otp_delivery_type or "Email"
+	
+	if not settings.email_account and not settings.sms_sender:
+		frappe.throw(_("You need to configure either Email Account or SMS sender in OTP Settings"))
 
 	if delivery_method in ["Email", "Both"] and not email:
 		frappe.throw(_(f"Email is required for {delivery_method} delivery method"))
